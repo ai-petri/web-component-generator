@@ -7,6 +7,7 @@ module.exports = function parse(template, context)
     var tag = false;
     var closingTag = false;
     var expression = false;
+    var script = false;
     var currentTag = "";
     var currentElement = {name:"div", number:0, text:""};
     var elements = [];
@@ -21,6 +22,7 @@ module.exports = function parse(template, context)
     var str = `let a${currentElement.number} = document.createElement("${currentElement.name}");\n`;
 
     var expr = "";
+    var scr = "";
 
 
     for(let i=0; i<template.length; i++)
@@ -59,7 +61,12 @@ module.exports = function parse(template, context)
                     closingTag = true;
                     break;
                 case ">":
-                    if(closingTag)
+                    let name = currentTag.split(" ")[0];                    
+                    if(name == "script")
+                    {
+                        script = !closingTag;
+                    }
+                    else if(closingTag)
                     {
                         currentElement = elements.pop(); 
                         if(currentElement.text.length > 0)
@@ -69,8 +76,7 @@ module.exports = function parse(template, context)
                     }
                     else
                     {
-                        let parent = currentElement;
-                        let name = currentTag.split(" ")[0];
+                        let parent = currentElement;                        
                         currentElement = {name, number: ++n, text: ""};
                         str += `let a${currentElement.number} = document.createElement("${currentElement.name}");\n`;
                         let attributes = currentTag.trim().split(" ").slice(1);
@@ -93,7 +99,15 @@ module.exports = function parse(template, context)
                     }
                     else
                     {
-                        currentElement.text += char;
+                        if(script)
+                        {
+                            scr += char;
+                        }
+                        else
+                        {
+                            currentElement.text += char;
+                        }
+                        
                     }
                     break;
             }
@@ -103,5 +117,5 @@ module.exports = function parse(template, context)
         
     }
 
-    return str;
+    return str + scr;
 }
